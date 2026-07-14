@@ -1,0 +1,27 @@
+:root {
+  --border: #d8d6cd;
+}
+body { font-family: -apple-system, sans-serif; margin: 0; color: #2c2c2a; }
+.topnav { display: flex; justify-content: space-between; padding: 12px 24px; border-bottom: 1px solid var(--border); }
+main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+.problem-layout { display: flex; gap: 32px; }
+.problem-statement { flex: 1; min-width: 320px; }
+.editor-panel { flex: 1; min-width: 400px; }
+.difficulty { font-size: 12px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+.difficulty-easy { background: #eaf3de; color: #27500a; }
+.difficulty-medium { background: #faeeda; color: #854f0b; }
+.difficulty-hard { background: #fcebeb; color: #791f1f; }
+.problem-list { list-style: none; padding: 0; }
+.problem-list li { padding: 8px 0; border-bottom: 1px solid var(--border); }
+form { display: flex; flex-direction: column; gap: 8px; }
+.sample pre { background: #f1efe8; padding: 8px; border-radius: 6px; }
+.result-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.result-table td, .result-table th { padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+.result-table tr.pass td { color: #27500a; }
+.result-table tr.fail td { color: #791f1f; }
+.result-summary { margin-top: 16px; padding: 10px; border-radius: 8px; font-size: 15px; }
+.result-passed { background: #eaf3de; }
+.result-failed, .result-error { background: #fcebeb; }
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator { display: inline; }
+.login-box { max-width: 320px; margin: 60px auto; }

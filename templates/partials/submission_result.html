@@ -1,0 +1,19 @@
+{{define "partials/submission_result.html"}}
+<div class="result-summary result-{{.Status}}">
+  <strong>{{.Status}}</strong> — score {{.Score}} / {{.MaxScore}}
+</div>
+<table class="result-table">
+  <thead>
+    <tr><th>Test</th><th>Result</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    {{range $i, $r := .Results}}
+    <tr class="{{if $r.Passed}}pass{{else}}fail{{end}}">
+      <td>#{{$i}}</td>
+      <td>{{if $r.Passed}}Passed{{else}}Failed{{end}}</td>
+      <td>{{$r.ExecStatus}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{end}}

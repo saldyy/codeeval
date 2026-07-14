@@ -1,0 +1,15 @@
+{{define "problems_list.html"}}
+{{template "header" .}}
+<h1>Problems</h1>
+<ul class="problem-list">
+  {{range .Problems}}
+  <li>
+    <a href="/problems/{{.Slug}}">{{.Title}}</a>
+    <span class="difficulty difficulty-{{.Difficulty}}">{{.Difficulty}}</span>
+  </li>
+  {{else}}
+  <li>No problems yet.</li>
+  {{end}}
+</ul>
+{{template "footer" .}}
+{{end}}

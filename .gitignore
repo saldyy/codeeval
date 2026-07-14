@@ -1,0 +1,18 @@
+# Environment
+.env
+
+# Go build artifacts
+/codeeval
+/server
+*.exe
+*.test
+*.out
+/vendor/
+
+# OS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+*.swp
