@@ -35,6 +35,12 @@ go build ./...
 # Vet / format
 go vet ./...
 gofmt -l .
+
+# Only needed when editing internal/templates/*.templ - generated
+# *_templ.go files are committed, so plain `go build`/`go run` above don't
+# need this:
+go install github.com/a-h/templ/cmd/templ@latest
+templ generate
 ```
 
 There is no test suite in the repo yet. If adding one, use standard `go test ./...`.
@@ -47,8 +53,10 @@ problem is "Two Sum" at `/problems/two-sum`.
 **Request flow**: `cmd/server/main.go` wires routes on an `echo.Echo` instance
 (github.com/labstack/echo/v4) directly to handler methods. Handlers are
 grouped by resource (`ProblemHandlers`, `SubmissionHandlers`, `AuthHandlers`
-in `internal/handlers/`), each holding a `*db.Store` and the parsed
-`*html/template.Template` set. Handler methods are `func(c echo.Context) error`.
+in `internal/handlers/`), each holding just a `*db.Store` (plus
+`SubmissionHandlers.Piston`) — no shared template state, since templ
+components are called directly (see "Templates" below). Handler methods are
+`func(c echo.Context) error`.
 
 **Auth**: `internal/handlers/auth.go` implements a deliberately minimal
 scheme — a plain, unsigned `user_id` cookie (bcrypt only on login, no session
@@ -102,9 +110,9 @@ problem's `function_signature`, never a full program.
    text column is `exec_status`, engine-neutral — it used to be
    `judge0_status` before the Piston migration), and the aggregate
    score/status is written back to the `submissions` row.
-7. The handler returns an HTML partial (`templates/partials/submission_result.html`)
-   that HTMX swaps into the `#results` div — submissions never trigger a full
-   page reload.
+7. The handler renders `templates.SubmissionResult(...)` (no layout, just
+   the results table) which HTMX swaps into the `#results` div —
+   submissions never trigger a full page reload.
 
 **Harness codegen** (`internal/harness/`): `Signature`/`Param` model a
 problem's typed function name + params + return type (type vocabulary is
@@ -143,29 +151,44 @@ worth knowing before touching any `internal/harness/*.go` file:
 **Piston client** (`internal/piston/client.go`): our language key → Piston
 `{language, version}` runtime mapping lives in `LanguageRuntimes` (version
 `"*"` = latest installed); extend this map (and the `<select>` in
-`templates/problem_detail.html`, Monaco's `monacoLangMap`, and
+`internal/templates/problem_detail.templ`, Monaco's `monacoLangMap`, and
 `internal/harness`'s per-language `Stub`/`Wrap`) together when adding a
 language. A fresh Piston instance has **no runtimes installed** — they're
 installed via `POST /api/v2/packages` (see Commands above). `RunOne` clamps
 `run_timeout` to `maxRunTimeoutMS` (3000) since Piston rejects the request
 outright above that, regardless of what a problem's `time_limit_ms` says.
 
-**Templates**: `html/template.ParseGlob` (in `cmd/server/main.go`) loads
-`templates/*.html` then `templates/partials/*.html` into one shared
-`*Template` set, wrapped in `internal/handlers/render.go`'s `Renderer` which
-implements Echo's `Renderer` interface (registered as `e.Renderer`) so
-handlers call `c.Render(status, name, data)`. `layout.html` defines
-`header`/`footer` blocks that page templates wrap around their body; partials
-(used as HTMX swap targets) render standalone without the layout. Monaco and
-HTMX are both loaded from CDN in the templates — no bundler, no `node_modules`.
-`problem_detail.html` gets a `StubsJSON` value (built in
-`ProblemHandlers.Detail` via `harness.Stub` for each of the 6 languages,
-`json.Marshal`ed, and typed `template.JS` for html/template's contextual
-JS-context autoescaping) embedded as `const stubs = {{.StubsJSON}};` — the
+**Templates** (`internal/templates/`, [templ](https://templ.guide)): each
+page is a typed Go function returning `templ.Component` — no
+`map[string]any`, no string-keyed template names, no runtime template
+parsing. `layout.templ` defines a `layout(title string)` component using
+templ's `{ children... }` pattern (replaces the old header/footer text
+blocks); page components (`Login()`, `ProblemsList(problems
+[]models.Problem)`, `ProblemDetail(problem *models.Problem, samples
+[]models.TestCase, stubs map[string]string)`) wrap their body with
+`@layout("CodeEval") { ... }`. `SubmissionResult(...)` (the HTMX swap
+target for `#results`) renders standalone, no layout — same as the old
+partial. Handlers call `internal/handlers/render.go`'s `render(c, status,
+component)` helper (NOT Echo's `Renderer` interface/`c.Render()` - templ
+writes straight to `io.Writer` via `component.Render(ctx, w)`).
+Edit `.templ` files, then run `templ generate` (see Commands) to regenerate
+the matching `*_templ.go` — **the generated files are committed**, so
+`go build`/`go run` never invoke the templ CLI themselves; forgetting to
+regenerate after a `.templ` edit means the build silently uses stale
+generated code.
+
+`ProblemDetail` gets the per-language editor stubs (built in
+`ProblemHandlers.Detail` via `harness.Stub` for each of the 6 languages) as
+a plain `map[string]string` — no manual JSON marshaling in Go anymore.
+`problem_detail.templ` embeds it via `@templ.JSONScript("stubs-data",
+stubs)` (renders a `<script type="application/json">`), and the page's
+inline Monaco-bootstrap `<script>` reads it with
+`JSON.parse(document.getElementById('stubs-data').textContent)`. The
 language `<select>`'s `change` handler calls `editor.setValue(stubs[lang])`
 to swap the Monaco content, so add a language to `piston.LanguageRuntimes`
 + this select + `monacoLangMap` + `internal/harness` together or the editor
-silently shows an empty stub for it.
+silently shows an empty stub for it. Monaco and HTMX are both loaded from
+CDN — no bundler, no `node_modules`.
 
 **Schema** (`migrations/001_init.sql` plus `003`-`006`, applied in filename
 order): `users` → `problems` → `test_cases` → `submissions` →

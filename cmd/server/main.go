@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -29,23 +28,13 @@ func main() {
 	defer pool.Close()
 	store := db.NewStore(pool)
 
-	tmpl, err := template.ParseGlob("templates/*.html")
-	if err != nil {
-		log.Fatalf("template parse failed: %v", err)
-	}
-	tmpl, err = tmpl.ParseGlob("templates/partials/*.html")
-	if err != nil {
-		log.Fatalf("partial template parse failed: %v", err)
-	}
-
 	p0 := piston.NewClient(pistonURL, pistonKey)
 
-	problemH := &handlers.ProblemHandlers{Store: store, Templates: tmpl}
-	submissionH := &handlers.SubmissionHandlers{Store: store, Piston: p0, Templates: tmpl}
-	authH := &handlers.AuthHandlers{Store: store, Templates: tmpl}
+	problemH := &handlers.ProblemHandlers{Store: store}
+	submissionH := &handlers.SubmissionHandlers{Store: store, Piston: p0}
+	authH := &handlers.AuthHandlers{Store: store}
 
 	e := echo.New()
-	e.Renderer = handlers.NewRenderer(tmpl)
 	e.HideBanner = true
 
 	e.Static("/static", "static")

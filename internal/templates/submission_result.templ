@@ -1,0 +1,33 @@
+package templates
+
+import (
+	"strconv"
+
+	"codeeval/internal/models"
+)
+
+templ SubmissionResult(status string, score, maxScore int, results []models.SubmissionResult) {
+	<div class={ "result-summary", "result-" + status }>
+		<strong>{ status }</strong> — score { strconv.Itoa(score) } / { strconv.Itoa(maxScore) }
+	</div>
+	<table class="result-table">
+		<thead>
+			<tr><th>Test</th><th>Result</th><th>Status</th></tr>
+		</thead>
+		<tbody>
+			for i, r := range results {
+				<tr class={ templ.KV("pass", r.Passed), templ.KV("fail", !r.Passed) }>
+					<td>#{ strconv.Itoa(i) }</td>
+					<td>
+						if r.Passed {
+							Passed
+						} else {
+							Failed
+						}
+					</td>
+					<td>{ r.ExecStatus }</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+}

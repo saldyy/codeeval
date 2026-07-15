@@ -1,0 +1,21 @@
+package templates
+
+import "codeeval/internal/models"
+
+templ ProblemsList(problems []models.Problem) {
+	@layout("CodeEval") {
+		<h1>Problems</h1>
+		<ul class="problem-list">
+			if len(problems) == 0 {
+				<li>No problems yet.</li>
+			} else {
+				for _, p := range problems {
+					<li>
+						<a href={ "/problems/" + p.Slug }>{ p.Title }</a>
+						<span class={ "difficulty", "difficulty-" + p.Difficulty }>{ p.Difficulty }</span>
+					</li>
+				}
+			}
+		</ul>
+	}
+}

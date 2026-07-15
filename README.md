@@ -10,6 +10,9 @@ stdin/stdout. Server-rendered Go + HTMX, no SPA build step.
 ## Stack
 
 - **Go** (stdlib `net/http` routing via Echo — see `cmd/server/main.go`)
+- **[templ](https://templ.guide)** for HTML rendering — typed Go components
+  compiled from `.templ` source (`internal/templates/`), not runtime-parsed
+  `html/template`
 - **HTMX** for the submit-and-see-results interaction (loaded from CDN)
 - **Monaco editor** for the code input (loaded from CDN)
 - **PostgreSQL** for problems, test cases, submissions
@@ -53,6 +56,14 @@ stdin/stdout. Server-rendered Go + HTMX, no SPA build step.
 
 5. Visit `http://localhost:8080`, log in with `test@example.com` /
    `password123` (from the seed data), and open the "Two Sum" problem.
+
+Generated `*_templ.go` files (compiled from `internal/templates/*.templ`)
+are committed, so the steps above don't need the templ CLI. Only install it
+if you're editing a `.templ` file:
+```
+go install github.com/a-h/templ/cmd/templ@latest
+templ generate   # regenerate after any .templ edit, before building/committing
+```
 
 ## Adding problems
 
@@ -116,7 +127,7 @@ internal/piston/     Piston API client
 internal/harness/    per-language function stub + grading driver codegen
 internal/handlers/   HTTP handlers (problems, submissions, auth)
 internal/models/     domain structs
-templates/           Go html/template files, header/footer partials
+internal/templates/  templ components (.templ source + generated *_templ.go)
 migrations/          schema + seed SQL
 static/               CSS
 ```

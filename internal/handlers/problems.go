@@ -1,20 +1,18 @@
 package handlers
 
 import (
-	"encoding/json"
-	"html/template"
 	"net/http"
 
 	"codeeval/internal/db"
 	"codeeval/internal/harness"
 	"codeeval/internal/piston"
+	"codeeval/internal/templates"
 
 	"github.com/labstack/echo/v4"
 )
 
 type ProblemHandlers struct {
-	Store     *db.Store
-	Templates *template.Template
+	Store *db.Store
 }
 
 func (h *ProblemHandlers) List(c echo.Context) error {
@@ -22,9 +20,7 @@ func (h *ProblemHandlers) List(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to load problems")
 	}
-	return c.Render(http.StatusOK, "problems_list.html", map[string]any{
-		"Problems": problems,
-	})
+	return render(c, http.StatusOK, templates.ProblemsList(problems))
 }
 
 func (h *ProblemHandlers) Detail(c echo.Context) error {
@@ -51,14 +47,6 @@ func (h *ProblemHandlers) Detail(c echo.Context) error {
 	for lang := range piston.LanguageRuntimes {
 		stubs[lang] = harness.Stub(sig, lang)
 	}
-	stubsJSON, err := json.Marshal(stubs)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to build editor stubs")
-	}
 
-	return c.Render(http.StatusOK, "problem_detail.html", map[string]any{
-		"Problem":   problem,
-		"Samples":   samples,
-		"StubsJSON": template.JS(stubsJSON),
-	})
+	return render(c, http.StatusOK, templates.ProblemDetail(problem, samples, stubs))
 }

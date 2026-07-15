@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"html/template"
 	"net/http"
 	"reflect"
 	"strings"
@@ -11,14 +10,14 @@ import (
 	"codeeval/internal/harness"
 	"codeeval/internal/models"
 	"codeeval/internal/piston"
+	"codeeval/internal/templates"
 
 	"github.com/labstack/echo/v4"
 )
 
 type SubmissionHandlers struct {
-	Store     *db.Store
-	Piston    *piston.Client
-	Templates *template.Template
+	Store  *db.Store
+	Piston *piston.Client
 }
 
 // Create handles an HTMX form POST from the problem page, runs the code
@@ -117,11 +116,5 @@ func (h *SubmissionHandlers) Create(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update submission")
 	}
 
-	return c.Render(http.StatusOK, "partials/submission_result.html", map[string]any{
-		"Status":    overallStatus,
-		"Score":     score,
-		"MaxScore":  maxScore,
-		"Results":   results,
-		"TestCases": testCases,
-	})
+	return render(c, http.StatusOK, templates.SubmissionResult(overallStatus, score, maxScore, results))
 }

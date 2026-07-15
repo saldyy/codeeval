@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"html/template"
 	"net/http"
 
 	"codeeval/internal/db"
+	"codeeval/internal/templates"
 
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
@@ -14,8 +14,7 @@ import (
 // For a bigger org, swap this for real sessions (Redis-backed) or OIDC/SSO.
 
 type AuthHandlers struct {
-	Store     *db.Store
-	Templates *template.Template
+	Store *db.Store
 }
 
 const userIDKey = "userID"
@@ -26,7 +25,7 @@ func UserIDFromContext(c echo.Context) string {
 }
 
 func (h *AuthHandlers) LoginPage(c echo.Context) error {
-	return c.Render(http.StatusOK, "login.html", nil)
+	return render(c, http.StatusOK, templates.Login())
 }
 
 func (h *AuthHandlers) Login(c echo.Context) error {

@@ -3,6 +3,7 @@ module codeeval
 go 1.25.0
 
 require (
+	github.com/a-h/templ v0.3.1020
 	github.com/jackc/pgx/v5 v5.5.5
 	github.com/labstack/echo/v4 v4.15.4
 	golang.org/x/crypto v0.53.0

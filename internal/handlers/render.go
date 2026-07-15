@@ -1,22 +1,15 @@
 package handlers
 
 import (
-	"html/template"
-	"io"
-
+	"github.com/a-h/templ"
 	"github.com/labstack/echo/v4"
 )
 
-// Renderer adapts the app's shared html/template set to Echo's Renderer
-// interface so handlers can call c.Render(status, name, data).
-type Renderer struct {
-	templates *template.Template
-}
-
-func NewRenderer(tmpl *template.Template) *Renderer {
-	return &Renderer{templates: tmpl}
-}
-
-func (r *Renderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return r.templates.ExecuteTemplate(w, name, data)
+// render writes a templ component directly to the response - templ
+// doesn't go through Echo's Renderer interface (which expects a template
+// name + map[string]any), it renders straight to an io.Writer.
+func render(c echo.Context, status int, component templ.Component) error {
+	c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextHTMLCharsetUTF8)
+	c.Response().WriteHeader(status)
+	return component.Render(c.Request().Context(), c.Response())
 }

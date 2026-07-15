@@ -1,0 +1,74 @@
+package templates
+
+import "codeeval/internal/models"
+
+templ ProblemDetail(problem *models.Problem, samples []models.TestCase, stubs map[string]string) {
+	@layout("CodeEval") {
+		<div class="problem-layout">
+			<section class="problem-statement">
+				<h1>{ problem.Title }</h1>
+				<span class={ "difficulty", "difficulty-" + problem.Difficulty }>{ problem.Difficulty }</span>
+				<div class="description">{ problem.DescriptionMD }</div>
+				<h3>Sample test cases</h3>
+				for _, s := range samples {
+					<div class="sample">
+						<div><strong>Arguments:</strong> <pre>{ string(s.ArgsJSON) }</pre></div>
+						<div><strong>Expected return:</strong> <pre>{ string(s.ExpectedReturnJSON) }</pre></div>
+					</div>
+				}
+			</section>
+			<section class="editor-panel">
+				<form
+					id="submit-form"
+					hx-post={ "/problems/" + problem.Slug + "/submit" }
+					hx-target="#results"
+					hx-swap="innerHTML"
+					hx-indicator="#spinner"
+				>
+					<label for="language">Language</label>
+					<select name="language" id="language">
+						<option value="python3">Python 3</option>
+						<option value="go">Go</option>
+						<option value="javascript">JavaScript</option>
+						<option value="java">Java</option>
+						<option value="cpp">C++</option>
+						<option value="c">C</option>
+					</select>
+					<div id="monaco-editor" style="height: 400px; border: 1px solid var(--border, #ccc);"></div>
+					<textarea name="source_code" id="source_code" style="display:none"></textarea>
+					<button type="submit">Submit</button>
+					<span id="spinner" class="htmx-indicator">Running...</span>
+				</form>
+				<div id="results"></div>
+			</section>
+		</div>
+		@templ.JSONScript("stubs-data", stubs)
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.47.0/min/vs/loader.min.js"></script>
+		<script>
+			const stubs = JSON.parse(document.getElementById('stubs-data').textContent);
+
+			require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.47.0/min/vs' } });
+			let editor;
+			require(['vs/editor/editor.main'], function () {
+				const langSelect = document.getElementById('language');
+				editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+					value: stubs[langSelect.value] || '',
+					language: 'python',
+					automaticLayout: true,
+					minimap: { enabled: false }
+				});
+
+				const monacoLangMap = { python3: 'python', go: 'go', javascript: 'javascript', java: 'java', cpp: 'cpp', c: 'c' };
+				langSelect.addEventListener('change', () => {
+					monaco.editor.setModelLanguage(editor.getModel(), monacoLangMap[langSelect.value] || 'plaintext');
+					editor.setValue(stubs[langSelect.value] || '');
+				});
+			});
+
+			// Sync Monaco's content into the hidden textarea right before HTMX submits the form.
+			document.getElementById('submit-form').addEventListener('htmx:configRequest', function () {
+				document.getElementById('source_code').value = editor ? editor.getValue() : '';
+			});
+		</script>
+	}
+}
